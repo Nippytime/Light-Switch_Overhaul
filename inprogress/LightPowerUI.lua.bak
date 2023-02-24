@@ -1,0 +1,220 @@
+require "ISUI/ISPanel"
+require "ISUI/ISButton"
+require "ISUI/ISLabel"
+require "ISUI/ISSlider"
+
+-- Define the NipSwitchPower class as a subclass of ISPanel
+NipSwitchPower = ISPanel:derive("NipSwitchPower");
+
+function NipSwitchPower:onClickApply()
+    local playerObj = getSpecificPlayer(self.playerNum);
+    if playerObj then
+        local objects = playerObj:getIntersectingObjects();
+        if objects then
+            local sq
+            for _,v in ipairs(objects) do
+                if instanceof(v, "IsoObject") and v:getSprite() and v:getSprite():getProperties():Val("CustomName") == "Light" then
+                    sq = v:getSquare();
+                    local value = self.slider:getValue();
+                    v:getSprite():getProperties():Set("LightRadius", value);
+                end
+            end
+            if sq then
+                ISTimedActionQueue.add(ISLightPowerAction:new(playerObj, sq));
+            end
+        end
+    end
+end
+
+function NipSwitchPower:onClickClose()
+    self:removeFromUIManager();
+end
+
+function NipSwitchPower:onGainJoypadFocus(joypadData)
+    ISPanelJoypad.onGainJoypadFocus(self, joypadData)
+    self.applyButton:setJoypadFocused(true);
+    self.closeButton:setJoypadFocused(true);
+    self.prevFocus = joypadData.focus
+    joypadData.focus = self
+end
+
+function NipSwitchPower:onLoseJoypadFocus(joypadData)
+    ISPanelJoypad.onLoseJoypadFocus(self, joypadData)
+    joypadData.focus = self.prevFocus
+end
+
+function NipSwitchPower:updateSliderFromGamepad()
+        local isL2Pressed = JoypadState.players[self.player]:getButton(Joypad.LBumper)
+        local isR2Pressed = JoypadState.players[self.player]:getButton(Joypad.RBumper)
+        if isL2Pressed then
+            self.slider:setCurrentValue(math.max(self.slider:getValue() - 1, self.minValue))
+        elseif isR2Pressed then
+            self.slider:setCurrentValue(math.min(self.slider:getValue() + 1, self.maxValue))
+        end
+    end
+
+function NipSwitchPower:onJoypadDown(button)
+    if button == Joypad.AButton then
+        self:onClickApply();
+    elseif button == Joypad.BButton then
+        self:onClickClose();
+    end
+end
+
+function NipSwitchPower:initialize()
+    ISPanel.initialize(self)
+
+    self:registerDragging()
+    self:ignoreWidthChange()
+    self:ignoreHeightChange()
+end
+
+function NipSwitchPower:CreateChildren()
+    ISPanel.CreateChildren(self)
+
+    local label = ISLabel:new(5, 10, "IGUI_NippeLightSwitch_Label", "", 1, 1, 1, 0, UIFont.Medium, true)
+    label:initialise()
+    self:addChild(label)
+    self.label = label
+
+    local valueLabel = ISLabel:new(5, 35, 30, "", 1, 1, 1, .8, UIFont.Small, true)
+    valueLabel:initialise()
+    self:addChild(valueLabel)
+    self.valueLabel = valueLabel
+
+    local slider = ISSlider:new(5, 50, 190, 15, self, NipSwitchPower.onValueChange)
+    slider:instantiate()
+    slider:initialise()
+    slider:setValues(3, 30, 1, 15, true)
+    slider.backgroundColor = {r=0, g=0, b=0, a=0.2}
+    slider.thumbColor = {r=20, g=10, b=0, a=0.8}
+    self:addChild(slider)
+    self.slider = slider
+
+    local closeButton = ISButton:new(5, 70, 90, 25, "Close", self, NipSwitchPower.onClickClose)
+    closeButton.internal = "CLOSE"
+    closeButton:initialise()
+    closeButton:instantiate()
+    self:addChild(closeButton)
+    self.closeButton = closeButton
+
+    local applyButton = ISButton:new(105, 70, 90, 25, "Apply", self, NipSwitchPower.onClickApply)
+    applyButton.internal = "APPLY"
+    applyButton:initialise()
+    applyButton:instantiate()
+    self:addChild(applyButton)
+    self.applyButton = applyButton
+end
+
+function NipSwitchPower:prerender()
+    ISPanel.prerender(self);
+
+    local x = 5;
+    local y = 10;
+    local w = self.width - 10;
+    local h = self.height - 15;
+    local fontHgt = getTextManager():getFontFromEnum(UIFont.Small):getLineHeight();
+
+    -- joypad slider input
+    self:updateSliderFromGamepad();
+
+    -- draw box around panel
+    self:drawRectBorder(x, y, w, h, 2.0, self.borderColor.r, self.borderColor.g, self.borderColor.b);
+
+    -- draw label for slider
+    self:drawText("Light Intensity", self.width/2 - getTextManager():MeasureStringX(UIFont.Medium, "Light Intensity") / 2, y, 1, 1, 1, 1, UIFont.Medium);
+
+    -- draw label for slider value
+    local value = self.slider:getValue();
+    self:drawText(value, self.width/2 - getTextManager():MeasureStringX(UIFont.Small, value) / 2, y + fontHgt + 5, 1, 1, 0, 1, UIFont.Small);
+
+    -- draw slider
+    local sliderWidth = self.width - 20;
+    local sliderX = 10;
+    local sliderY = y + fontHgt + 20;
+    local sliderHeight = 20;
+    self.slider:setX(sliderX);
+    self.slider:setY(sliderY);
+    self.slider:setWidth(sliderWidth);
+    self.slider:setHeight(sliderHeight);
+    self.slider:prerender();
+
+    -- draw close and apply buttons
+    local closeBtnWidth = 50;
+    local closeBtnX = 10;
+    local closeBtnY = sliderY + sliderHeight + 10;
+    self.closeButton:setX(closeBtnX);
+    self.closeButton:setY(closeBtnY);
+    self.closeButton:setWidth(closeBtnWidth);
+    self.closeButton:setHeight(fontHgt + 5);
+    self.closeButton:prerender();
+
+    local applyBtnWidth = 50;
+    local applyBtnX = self.width - applyBtnWidth - 10;
+    local applyBtnY = sliderY + sliderHeight + 10;
+    self.applyButton:setX(applyBtnX);
+    self.applyButton:setY(applyBtnY);
+    self.applyButton:setWidth(applyBtnWidth);
+    self.applyButton:setHeight(fontHgt + 5);
+    self.applyButton:prerender();
+end
+
+function NipSwitchPower:render()
+    ISPanelJoypad.render(self)
+    self:drawTextCentre(self.label, self.width/2, 5, 1, 1, 0.8, 1, UIFont.Medium)
+    self:drawTextCentre(self.slider:getValue(), self.width/2, 30, 1, 1, 0.8, 1, UIFont.Small)
+
+    local x = 5
+    local y = 45
+    self:drawRectBorder(x, y, self.width - 10, 25, 0.3, 1, 1, 1)
+    self:drawRect(x + 5, y + 5, self.width - 20, 15, 0.5, 0, 0, 0)
+    self:drawRect(x + 5, y + 5, (self.width - 20) * (self.slider:getValue() - self.slider:getMinimum()) / (self.slider:getMaximum() - self.slider:getMinimum()), 15, 1, 1, 0, 0)
+
+    local buttonW = 100
+    local buttonH = 25
+    local closeButtonX = (self.width / 2) - buttonW - 5
+    local applyButtonX = (self.width / 2) + 5
+    self.closeButton:setX(closeButtonX)
+    self.closeButton:setY(self.height - buttonH - 5)
+    self.closeButton:setWidth(buttonW)
+    self.closeButton:setHeight(buttonH)
+
+    self.applyButton:setX(applyButtonX)
+    self.applyButton:setY(self.height - buttonH - 5)
+    self.applyButton:setWidth(buttonW)
+    self.applyButton:setHeight(buttonH)
+
+    self.closeButton:render()
+    self.applyButton:render()
+end
+
+-- Define the function to open the panel
+function NipSwitchPower.OnOpenPanel()
+    local x = 1200
+    local y = 500
+    local width = 200
+    local height = 75
+
+    -- Create an instance of the ISLightPowerControl panel
+    local panel = NipSwitchPower:new(x, y, width, height)
+
+    -- Add the panel to the UI manager
+    panel:initialise()
+    panel:addToUIManager()
+    panel:setVisible(true)
+end
+-- Register the OnOpenPanel function to the events.OnGameStart event
+Events.OnGameStart.Add(NipSwitchPower.OnOpenPanel)
+
+function NipSwitchPower:new(x, y, width, height, playerNum)
+    local o = ISPanel:new(x, y, width, height)
+    setmetatable(o, self)
+    self.__index = self
+
+    o.playerNum = playerNum
+
+    o:CreateChildren()
+    o:updateButtons()
+
+    return o
+end

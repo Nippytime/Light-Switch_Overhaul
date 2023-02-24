@@ -1,0 +1,52 @@
+NipSwitchUI = ISPanel:derive("NipSwitchUI")
+
+function NipSwitchUI:new(x, y, width, height)
+    local o = ISPanel:new(x, y, width, height)
+    setmetatable(o, self)
+    self.__index = self
+    return o
+    end
+
+function NipSwitchUI:createChildren(width, height)
+    local fontDialogue = getTextManager():getFontHeight(UIFont.Dialogue)
+    local fontCode = getTextManager():getFontHeight(UIFont.Code)
+    -- The content of the panel is centered horizontally and vertically
+    local panelWidth = 225
+    local panelHeight = 100
+    local marginX = (width - panelWidth) / 2
+    local marginY = (height - panelHeight) / 2
+
+    -- Create the label for light intensity
+    self.labelLightIntensity = ISLabel:new(marginX, marginY, fontDialogue, "Light Intensity", 180, 140, 1, .9, UIFont.Dialogue, true)
+    self.labelLightIntensity:initialise()
+    self.labelLightIntensity:instantiate()
+    self:addChild(self.labelLightIntensity)
+
+    -- Create the label that displays the slider value
+    self.labelSliderValue = ISLabel:new(marginX, marginY + 20, fontCode, "", 140, 100, 1, .9, UIFont.Code, true)
+    self.labelSliderValue:initialise()
+    self.labelSliderValue:instantiate()
+    self:addChild(self.labelSliderValue)
+
+    -- Create the slider
+    self.slider = ISSliderPanel:new(marginX, marginY + 40, 225, 20, self, NipSwitchUI.onSliderValueChanged)
+    self.slider:initialise()
+    self.slider:instantiate()
+    self.slider:setValues(3, 30, 1, 3, true)
+    self:addChild(self.slider)
+
+    -- Create the close button
+    self.buttonClose = ISButton:new(marginX, marginY + 65, 100, 30, "Close", self, NipSwitchUI.onClickClose)
+    self.buttonClose:initialise()
+    self.buttonClose:instantiate()
+    self:addChild(self.buttonClose)
+
+    -- Create the apply button
+    self.buttonApply = ISButton:new(marginX + 125, marginY + 65, 100, 30, "Apply", self, NipSwitchUI.onClickApply)
+    self.buttonApply:initialise()
+    self.buttonApply:instantiate()
+    self:addChild(self.buttonApply)
+end
+
+
+

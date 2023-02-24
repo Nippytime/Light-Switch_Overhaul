@@ -1,0 +1,271 @@
+require "ISUI/ISPanel"
+require "ISUI/ISButton"
+require "ISUI/ISUIElement"
+
+function drawRectBorderStaticV2(x, y, w, h, a, r, g, b)
+    do
+        local StencilLevel = 1
+
+        function ISUIElement:setStencilRect(x, y, w, h)
+            StencilLevel = StencilLevel + 1
+            return self.javaObject:setStencilRect(x, y, w, h)
+        end
+
+        function ISUIElement:clearStencilRect()
+            StencilLevel = StencilLevel > 0 and StencilLevel - 1 or 0
+            return self.javaObject:clearStencilRect()
+        end
+
+        function ISUIElement:drawRectBorderStatic(x, y, w, h, a, r, g, b)
+            self.javaObject:setStencilRect(x+1, y+1, w-2, h-2)
+            local renderer = SpriteRenderer.instance
+            renderer:glStencilFunc(517, StencilLevel, 255)
+
+            renderer:renderi(nil, x + self:getAbsoluteX(), y + self:getAbsoluteY(), w, h, r, g, b, a, nil)
+
+            self.javaObject:clearStencilRect()
+        end
+        Events.OnPreUIDraw.Add(function()
+            StencilLevel = 1
+        end)
+    end
+end
+-- Define the NipSwitchUI class as a subclass of ISPanel
+NipSwitchUI = ISPanel:derive("NipSwitchUI")
+
+
+
+function NipSwitchUI:createChildren(width, height)
+-- Calculate new dimensions for the child elements
+local newWidth = self.width - 40
+local newHeight = self.height - 85
+local newSliderWidth = newWidth - 20
+local player = getSpecificPlayer(0)
+    local value = 15
+
+--Create a label for the slider value
+--[[self.sliderNum = ISLabel:new(self.width / 2, 10, 20, value, 220, 180, 1, .9)
+self.sliderNum:initialise()
+self.sliderNum:instantiate()
+self.sliderNum.setColor(self, 220, 180, 1, .7)
+self.sliderNum.borderColor = {r=1, g=1, b=1, a=0}
+self.sliderNum.backgroundColor = {r=0, g=0, b=0, a=0.2}
+self.sliderNum.highlightBackgroundColor = {r=1, g=1, b=1, a=0.1}
+self:addChild(self.sliderNum)]]
+
+--Create a label for the slider
+self.sliderLabel = ISLabel:new(self.width / 2, 20, 20, "Light Intensity", 180, 140, 1, .9, UIFont.Dialogue)
+self.sliderLabel:initialise()
+self.sliderLabel:instantiate()
+self.sliderLabel.setColor(self.sliderLabel, 180, 140, 1, .7)
+self.sliderLabel.borderColor = {r=40, g=20, b=1, a=0.5}
+self.sliderLabel.backgroundColor = {r=0, g=0, b=0, a=0.7}
+self:addChild(self.sliderLabel)
+
+-- Create the slider
+self.slider = ISSliderPanel:new(10, self.sliderLabel:getBottom() + 10, newSliderWidth, 20, self, self.value)
+self.slider:initialise()
+self.slider:instantiate()
+self.slider.sliderBorderColor = {r=80, g=40, b=1, a=0.5}
+self.slider.sliderMouseOverColor = {r=160, g=120, b=1, a=0.5}
+self.slider.sliderColor = {r=20, g=10, b=1, a=0.9}
+self.slider.sliderDim = {r=10, g=10, b=1, a=0.8}
+self.slider.sliderBarColor = {r=0, g=100, b=0, a=0.8}
+self.slider.sliderBarDim = {r=240, g=200, b=1, a=0.7}
+self.slider.sliderBarBorderColor = {r=100, g=60, b=1, a=0.5}
+self.slider:setValues(3, 30, 1, 3)
+self:addChild(self.slider)
+
+    local value = self.slider:getValue() or 15
+
+    local buttonWidth, buttonHeight = 60, 30
+    local applyButtonX = self.slider:getRight() - 5 - buttonWidth
+    local applyButtonY = self.slider:getBottom() + 15
+    local closeButtonX = self.slider:getX() + 5
+    local closeButtonY = self.slider:getBottom() + 15
+
+-- Create the "Apply" button
+self.applyButton = ISButton:new(applyButtonX, applyButtonY, buttonWidth, buttonHeight, "", self, NipSwitchUI.onClickApply)
+self.applyButton:initialise()
+self.applyButton:instantiate()
+self.applyButton.borderColor = {r=80, g=40, b=0, a=0}
+self.applyButton.backgroundColor = {r=10, g=10, b=10, a=0}
+self.applyButton.highlightBackgroundColor = {r=1, g=120, b=1, a=0.5}
+self.applyButton.highlightBorderColor = {r=240, g=200, b=1, a=0.5}
+self:addChild(self.applyButton)
+
+    -- Create the "Apply" label
+    self.applyLabel = ISLabel:new(applyButtonX, applyButtonY, 20, "Apply")
+    self.applyLabel:initialise()
+    self.applyLabel:instantiate()
+    self.applyLabel.setColor(self.applyLabel, 120, 80, 5)
+    self.applyLabel.center = true
+    self.applyLabel.backgroundColor = {r=0, g=0, b=0, a=.3}
+    self:addChild(self.applyLabel)
+
+-- Create the "Close" button
+self.closeButton = ISButton:new(closeButtonX, closeButtonY, buttonWidth, buttonHeight, "", self, NipSwitchUI.onClickClose)
+self.closeButton:initialise()
+self.closeButton:instantiate()
+self.closeButton.borderColor = {r=80, g=40, b=0, a=0}
+self.closeButton.backgroundColor = {r=10, g=10, b=10, a=0}
+self.closeButton.highlightBackgroundColor = {r=1, g=120, b=1, a=0.5}
+self.closeButton.highlightBorderColor = {r=240, g=200, b=1, a=0.5}
+self:addChild(self.closeButton)
+
+    -- Create the "Close" label
+    self.closeLabel = ISLabel:new(closeButtonX, closeButtonY, 20, "Close")
+    self.closeLabel:initialise()
+    self.closeLabel:instantiate()
+    self.closeLabel.setColor(self.closeLabel, 120, 80, 5)
+    self.closeLabel.center = true
+    self.closeLabel.backgroundColor = {r=0, g=0, b=0, a=.3}
+    self:addChild(self.closeLabel)
+    end
+
+function NipSwitchUI:onClickClose()
+    if self.instance then
+        self:removeFromUIManager()
+        NipSwitchUI.instance = nil
+    end
+end
+
+function NipSwitchUI:onMouseDown(x, y)
+    ISPanel.onMouseDown(self, x, y)
+end
+
+function NipSwitchUI:onMouseMove(dx, dy)
+    ISPanel.onMouseMove(self, dx, dy)
+end
+
+function NipSwitchUI:onMouseMoveInside(x, y)
+    ISPanel.onMouseMoveInside(self, x, y)
+    if self.dragging and self.instance then
+        self:setX(self:getX() + x)
+        self:setY(self:getY() + y)
+    end
+end
+
+function NipSwitchUI:onMouseDownInside(x, y)
+    ISPanel.onMouseDownInside(self, x, y)
+    if self.instance then
+        self.dragging = true
+    end
+end
+
+function NipSwitchUI:onMouseUpInside(x, y)
+    ISPanel.onMouseUpInside(self, x, y)
+    if self.instance then
+        self.dragging = false
+    end
+end
+
+function NipSwitchUI:onMouseUp(x, y)
+    ISPanel.onMouseUp(self, x, y)
+    if self.instance then
+        self.dragging = false
+    end
+end
+
+function NipSwitchUI:onMouseMoveOutside(x, y)
+    ISPanel.onMouseMoveOutside(self, x, y)
+    if self.instance then
+        self.dragging = false
+    end
+end
+
+function NipSwitchUI:onMouseDownOutside(x, y)
+    ISPanel.onMouseDownOutside(self, x, y)
+    if self.instance then
+        self.dragging = false
+        self:removeFromUIManager()
+    end
+end
+
+function NipSwitchUI:onMouseUpOutside(x, y)
+    ISPanel.onMouseUpOutside(self, x, y)
+    if self.instance then
+        self:removeFromUIManager()
+        self.dragging = false
+    end
+end
+
+function NipSwitchUI:onClickApply()
+    local value = self.slider:getValue() or 15
+if self.instance then
+    local sprLight = self.instance.getSprite()
+    local sprSwitch = sprLight:getProperties():Val("CustomName") == "Switch"
+        if not sprSwitch then return end
+    sprSwitch:getProperties():Set("LightRadius", value)
+    NipSwitchUI.instance = nil
+    end
+end
+
+function NipSwitchUI:prerender()
+
+    drawRectBorderStaticV2(0, 0, self.width, self.height, 0.6, 60, 20, 0)
+    drawRectBorderStaticV2(5, 5, self.width -5, self.height -5, 0.8, 190, 150, 0)
+    local buttonWidth, buttonHeight = 60, 30
+    local applyButtonX = self.slider:getRight() - 5 - buttonWidth
+    local applyButtonY = self.slider:getBottom() + 15
+    local closeButtonX = self.slider:getX() + 5
+    local closeButtonY = self.slider:getBottom() + 15
+    -- Draw the "Apply" button
+    drawRectBorderStaticV2(applyButtonX, applyButtonY, buttonWidth, buttonHeight, 0.8, 80, 40, 0)
+
+    -- Draw the "Close" button
+    drawRectBorderStaticV2(closeButtonX, closeButtonY, buttonWidth, buttonHeight, 0.8, 80, 40, 0)
+end
+
+function NipSwitchUI:render()
+    ISPanel.render(self)
+
+    -- Set up the background color and border color of the panel
+
+    --self.borderColor = {r=1, g=1, b=1, a=0.5}
+
+    -- Call the function to draw the border
+end
+
+
+
+-- Define the function to open the panel
+function NipSwitchUI.OnOpenPanel()
+    local x = 1200
+    local y = 500
+    local width = 225
+    local height = 100
+
+    -- Create an instance of the NipSwitchUI panel
+    local panel = NipSwitchUI:new(x, y, width, height)
+
+    -- Add the panel to the UI manager
+    panel:initialise()
+    panel:instantiate()
+    panel:addToUIManager()
+    panel:setVisible(true)
+end
+-- Register the OnOpenPanel function to the events.OnGameStart event
+Events.OnGameStart.Add(NipSwitchUI.OnOpenPanel)
+
+function NipSwitchUI:new(x, y, width, height)
+    local o = ISPanel:new(x, y, width, height)
+    setmetatable(o, self)
+    self.__index = self
+
+    -- Define options for the "Apply" button
+    --o.applyButtonBorderColor = {r=1, g=1, b=1, a=0}
+    --o.applyButtonBackgroundColor = {r=0, g=0, b=0, a=0}
+    --o.applyButtonHighlightBackgroundColor = {r=1, g=120, b=1, a=0.5}
+    --o.applyButtonHighlightBorderColor = {r=240, g=200, b=1, a=0.5}
+    --o.applyLabelColor = {r=120, g=80, b=5}
+
+    -- Define options for the "Close" button
+    --o.closeButtonBorderColor = {r=0, g=0, b=0, a=0}
+    --o.closeButtonBackgroundColor = {r=0, g=0, b=0, a=0}
+    --o.closeButtonHighlightBackgroundColor = {r=1, g=120, b=1, a=0.5}
+    --o.closeButtonHighlightBorderColor = {r=240, g=200, b=1, a=0.5}
+    --o.closeLabelColor = {r=80, g=40, b=5}
+
+    return o
+end

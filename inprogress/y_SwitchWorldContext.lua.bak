@@ -1,0 +1,87 @@
+local ISWorldObjectContextMenu = ISWorldObjectContextMenu -- localize globals for performance
+local ZombRand = ZombRand
+local getText = getText
+local ipairs = ipairs
+local getSpecificPlayer = getSpecificPlayer
+local getTexture = getTexture
+local bulbLevel = SandboxVars.Nipswitch.Bulblevel
+local disableBulb = bulbLevel > 10
+local function updateLightbulbOption(context, contextMenuText, lowLevel, toolTip, previousPhrase)
+    local contextOption = context:getOptionFromName(getText(contextMenuText))
+    if disableBulb then context:removeOptionByName(getText(contextMenuText)) return end
+    if contextOption and lowLevel then
+        toolTip.description = getText("ContextMenu_One")
+        local newPhrase = ""
+        while newPhrase == previousPhrase do
+            local rand = ZombRand(1, 4)
+            if rand == 1 then
+                newPhrase = "You see a lightbulb socket and become intimidated..."
+            elseif rand == 2 then
+                newPhrase = "You wish you knew more about lightbulbs..."
+            else
+                newPhrase = "Does my finger go in the light socket..?"
+            end
+        end
+        previousPhrase = newPhrase
+        local contextRead = context:insertOptionAfter(contextMenuText, newPhrase)
+        contextRead.toolTip = toolTip
+        contextRead.iconTexture = getTexture("media/textures/switch.png")
+        contextRead.notAvailable = true
+        context:removeOptionByName(getText(contextMenuText))
+    end
+    return previousPhrase
+end
+
+local function bulbContext(player_num, context, worldobjects)
+    local sq
+
+    for _,v in ipairs(worldobjects) do
+        local square = v:getSquare()
+        if square and sq == nil then
+            sq = square
+        end
+        local sprLight = v:getSprite()
+        local sprSwitch = sprLight:getProperties():Val("CustomName") == "Switch"
+        if not sprSwitch then return end
+        local player = getSpecificPlayer(player_num)
+        local zapLevel = player:getPerkLevel(Perks.Electricity)
+        local lowLevel = zapLevel <= (bulbLevel - 1)
+        local toolTip = ISWorldObjectContextMenu.addToolTip()
+        local previousPhrase = ""
+        local contextBulbAdd = context:getOptionFromName(getText("ContextMenu_AddLightbulb")) -- get "Read" context menu option
+        local contextBulb = context:getOptionFromName(getText("ContextMenu_RemoveLightbulb")) -- get "Read" context menu option
+
+        previousPhrase = updateLightbulbOption(context, "ContextMenu_AddLightbulb", lowLevel, toolTip, previousPhrase)
+        previousPhrase = updateLightbulbOption(context, "ContextMenu_RemoveLightbulb", lowLevel, toolTip, previousPhrase)
+
+            if sprSwitch and contextBulbAdd then
+                contextBulbAdd.iconTexture = getTexture("media/textures/switch.png")
+            elseif sprSwitch and contextBulb then
+                contextBulb.iconTexture = getTexture("media/textures/switch.png")
+            end
+
+        local battLevel = SandboxVars.Nipswitch.Batterylevel
+        local blowLevel = zapLevel <= (battLevel - 1)
+        local disableBatt = battLevel > 10
+        local battAdd = context:getOptionFromName(getText("ContextMenu_AddBattery"))
+        local battRem = context:getOptionFromName(getText("ContextMenu_Remove_Battery"))
+        local battConnect = context:getOptionFromName(getText("ContextMenu_CraftBatConnector"))
+        local function updateBatteryOption(battOption, contextMenuText)
+            if battOption then
+                battOption.iconTexture = getTexture("media/textures/switch.png")
+                if blowLevel or disableBatt then
+                    battOption.notAvailable = true
+                    context:removeOptionByName(getText(contextMenuText))
+                else
+                    battOption.notAvailable = false
+                end
+            end
+        end
+
+        updateBatteryOption(battAdd, "ContextMenu_AddBattery")
+        updateBatteryOption(battRem, "ContextMenu_Remove_Battery")
+        updateBatteryOption(battConnect, "ContextMenu_CraftBatConnector")
+    end
+end
+
+Events.OnFillWorldObjectContextMenu.Add(bulbContext)

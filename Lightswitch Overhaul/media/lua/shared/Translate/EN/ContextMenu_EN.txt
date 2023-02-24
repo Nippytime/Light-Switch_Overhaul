@@ -1,0 +1,8 @@
+ContextMenu_EN = 
+{
+	ContextMenu_One = "<RGB:232,209,0>I should tinker with some electronics",
+	ContextMenu_Two = "<RGB:232,209,0>I always knew I could learneded",
+	ContextMenu_Three = "I don't want to get Eletrocuted...",
+	ContextMenu_Four = "I feel the POWA!",
+
+}

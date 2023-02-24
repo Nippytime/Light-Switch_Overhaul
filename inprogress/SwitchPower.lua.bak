@@ -1,0 +1,28 @@
+local function switchPower(player_num, context, worldobjects)
+        local sq
+
+        for _,v in ipairs(worldobjects) do
+            local square = v:getSquare()
+            if square and sq == nil then
+                sq = square
+            end
+            local sprLight = v:getSprite()
+            local sprSwitch = sprLight:getProperties():Val("CustomName") == "Switch"
+        if not sprSwitch then return end
+        --local lightPower = sprLight:getProperties():Val("LightRadius")
+
+        -- Add the Power submenu to the context menu
+        local powerOption = context:addOption(getText("ContextMenu_SwitchPower"), nil, function()
+            local powerControl = NipSwitchUI:new(1200, 500, 225, 100)
+            powerControl:initialise()
+            powerControl:instantiate()
+            powerControl:addToUIManager()
+        end, player_num)
+        powerOption.iconTexture = getTexture("media/textures/switch.png")
+
+
+    end
+    context:removeFromUIManager()
+end
+
+Events.OnFillWorldObjectContextMenu.Add(switchPower)

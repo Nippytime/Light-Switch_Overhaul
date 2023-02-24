@@ -1,0 +1,41 @@
+require "TimedActions/ISBaseTimedAction"
+
+NipActions = ISBaseTimedAction:derive("NipActions")
+
+function NipActions:isValid()
+    return true
+end
+
+function NipActions:update()
+    -- no-op
+end
+
+function NipActions:waitToStart()
+    return false
+end
+
+function NipActions:start()
+    -- no-op
+end
+
+function NipActions:stop()
+    ISBaseTimedAction.stop(self)
+end
+
+function NipActions:perform()
+    -- needed to remove from queue / start next.
+    ISBaseTimedAction.perform(self)
+end
+local switchSpeed = SandboxVars.Nipswitch.Craftspeed
+function NipActions:new(character)
+    local o = {}
+    setmetatable(o, self)
+    self.__index = self
+    o.character = character
+    o.stopOnWalk = true
+    o.stopOnRun = true
+    o.forceProgressBar = true
+    o.maxTime = switchSpeed -- set the maximum time for the action
+    if o.character:isTimedActionInstant() then o.maxTime = 1; end
+    return o
+end

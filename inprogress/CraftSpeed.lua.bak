@@ -1,0 +1,8 @@
+require "NipTimedAction"
+
+function Recipe.OnCreate.Switch(items, result, player_num)
+    --local player = getSpecificPlayer(player_num)
+    ISTimedActionQueue.add(NipActions:new(player_num))
+    print(player_num)
+    --print(player)
+end

@@ -1,0 +1,9 @@
+Tooltip_EN = {
+	Tooltip_Lightswitches_fordummies = "Light Switch Tinkering for Not Dummies"
+	Tooltip_BookTitle_Electrical = "Light Switch Tinkering for Not Dummies"
+	Tooltip_One = "You just don't get it",
+	Tooltip_Two = "You go cross-eyed when you try to read...",
+	Tooltip_Three = "You feel like a complete potato...",
+	Tooltip_Four = "I always knew I could learneded",
+	Tooltip_Five = "I am such a smarty pants!",
+}

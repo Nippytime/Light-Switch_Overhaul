@@ -1,0 +1,74 @@
+local ISWorldObjectContextMenu = ISWorldObjectContextMenu -- localize globals for performance
+local ZombRand = ZombRand
+local getText = getText
+local ipairs = ipairs
+local getSpecificPlayer = getSpecificPlayer
+local getTexture = getTexture
+local bulbLevel = SandboxVars.Nipswitch.Bulblevel
+local disableBulb = bulbLevel > 10
+local phrases = {
+    "You see a lightbulb socket and become intimidated...",
+    "You wish you knew more about lightbulbs...",
+    "Does my finger go in the light socket..?"
+}
+
+local function updateLightbulbOption(context, contextMenuText, lowLevel, toolTip)
+    local contextOption = context:getOptionFromName(getText(contextMenuText))
+    if disableBulb then context:removeOptionByName(getText(contextMenuText)) return end
+    if contextOption and lowLevel then
+        local newPhrase = phrases[ZombRand(1, 4)]
+        local contextRead = context:insertOptionAfter(contextMenuText, newPhrase)
+        contextRead.toolTip = toolTip
+        contextRead.iconTexture = getTexture("media/textures/switch.png")
+        contextRead.notAvailable = true
+        context:removeOptionByName(getText(contextMenuText))
+    end
+end
+
+local function bulbContext(player_num, context, worldobjects)
+    local sq
+    for _,v in ipairs(worldobjects) do
+        local square = v:getSquare()
+        if square and sq == nil then
+            sq = square
+        end
+        local sprLight = v:getSprite()
+        local sprSwitch = sprLight:getProperties():Val("CustomName") == "Switch"
+        if not sprSwitch then return end
+        local player = getSpecificPlayer(player_num)
+        local zapLevel = player:getPerkLevel(Perks.Electricity)
+        local lowLevel = zapLevel <= (bulbLevel - 1)
+        local toolTip = ISWorldObjectContextMenu.addToolTip()
+
+        updateLightbulbOption(context, "ContextMenu_AddLightbulb", lowLevel, toolTip)
+        updateLightbulbOption(context, "ContextMenu_RemoveLightbulb", lowLevel, toolTip)
+
+        if sprSwitch then
+            local contextBulbAdd = context:getOptionFromName(getText("ContextMenu_AddLightbulb"))
+            local contextBulb = context:getOptionFromName(getText("ContextMenu_RemoveLightbulb"))
+            if contextBulbAdd then contextBulbAdd.iconTexture = getTexture("media/textures/switch.png") end
+            if contextBulb then contextBulb.iconTexture = getTexture("media/textures/switch.png") end
+        end
+
+        local battLevel = SandboxVars.Nipswitch.Batterylevel
+        local blowLevel = zapLevel <= (battLevel - 1)
+        local disableBatt = battLevel > 10
+
+        local function updateBatteryOption(battOption, contextMenuText)
+            if battOption then
+                battOption.iconTexture = getTexture("media/textures/switch.png")
+                if blowLevel then
+                    battOption.notAvailable = true
+                elseif disableBatt then
+                    context:removeOptionByName(getText(contextMenuText))
+                end
+            end
+        end
+
+        updateBatteryOption(context:getOptionFromName(getText("ContextMenu_AddBattery")), "ContextMenu_AddBattery")
+        updateBatteryOption(context:getOptionFromName(getText("ContextMenu_Remove_Battery")), "ContextMenu_Remove_Battery")
+        updateBatteryOption(context:getOptionFromName(getText("ContextMenu_CraftBatConnector")), "ContextMenu_CraftBatConnector")
+    end
+end
+
+Events.OnFillWorldObjectContextMenu.Add(bulbContext)
